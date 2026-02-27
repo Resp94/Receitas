@@ -1,0 +1,132 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RecipeCard from '../components/RecipeCard.astro';
+import { getCollection } from 'astro:content';
+
+// Obtém todas as receitas
+const allRecipes = await getCollection('receitas');
+---
+
+<Layout title="Início">
+  <section class="hero-section">
+    <div class="container text-center">
+      <h1 class="hero-title">O que vamos <span class="highlight">cozinhar</span> hoje?</h1>
+      <p class="hero-subtitle">Encontre as melhores receitas para qualquer ocasião.</p>
+      
+      <div class="categories margin-y">
+        <button class="btn btn-outline category-btn" data-category="all" style="border-radius: var(--radius-pill)">Todas</button>
+        <button class="btn btn-outline category-btn" data-category="Aves" style="border-radius: var(--radius-pill)">Aves</button>
+        <button class="btn btn-outline category-btn" data-category="Peixes" style="border-radius: var(--radius-pill)">Peixes</button>
+        <button class="btn btn-outline category-btn" data-category="Suínos" style="border-radius: var(--radius-pill)">Suínos</button>
+        <button class="btn btn-outline category-btn" data-category="Bovinos" style="border-radius: var(--radius-pill)">Bovinos</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="recipes-section bg-gray">
+    <div class="container">
+      <h2 style="margin-bottom: 2rem;">Receitas em Destaque</h2>
+      <div class="recipes-grid">
+        {allRecipes.map(recipe => (
+          <RecipeCard recipe={recipe} />
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const searchInput = document.getElementById('searchInput') as HTMLInputElement | null;
+    const cards = document.querySelectorAll('.recipe-card');
+    
+    let activeCategory: string | null = 'all';
+    let searchQuery: string = '';
+
+    function filterCards() {
+      cards.forEach(card => {
+        const cardElement = card as HTMLElement;
+        const cardTagsAttr = card.getAttribute('data-tags');
+        const cardTags = cardTagsAttr ? cardTagsAttr.split(',') : [];
+        
+        // Pega a categoria (o primeiro badge sem style inline)
+        const badgeCategory = cardElement.querySelector('.badge:not([style])')?.textContent?.trim() || '';
+        // Pega o título para a busca (case insensitive)
+        const cardTitle = cardElement.querySelector('.recipe-card-title')?.textContent?.toLowerCase() || '';
+        
+        const matchCategory = activeCategory === 'all' || badgeCategory === activeCategory;
+        const matchSearch = !searchQuery || cardTitle.includes(searchQuery);
+
+        if (matchCategory && matchSearch) {
+          cardElement.style.display = 'block';
+        } else {
+          cardElement.style.display = 'none';
+        }
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = (e.target as HTMLInputElement).value.toLowerCase();
+        filterCards();
+      });
+    }
+
+    categoryBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeCategory = btn.getAttribute('data-category');
+        categoryBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        filterCards();
+      });
+    });
+  });
+</script>
+
+<style>
+  .hero-section {
+    padding: 6rem 0 4rem;
+    background: linear-gradient(to bottom, #fff, #fef5f2);
+  }
+  
+  .hero-title {
+    font-size: 3.5rem;
+    color: var(--color-text-body);
+    margin-bottom: 1rem;
+  }
+  
+  .highlight {
+    color: var(--color-primary);
+  }
+  
+  .hero-subtitle {
+    font-size: 1.25rem;
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .categories {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .bg-gray {
+    background-color: #fcfcfc;
+    padding: 4rem 0;
+  }
+  
+  .recipes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+  
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+  }</style>
